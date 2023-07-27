@@ -194,6 +194,7 @@ function switchLanguage(lang) {
     document.getElementById('encode').innerText = translations[lang].encode;
     document.getElementById('decode').innerText = translations[lang].decode;
     document.getElementById('output').placeholder = translations[lang].outputPlaceholder;
+    document.querySelector('h1').textContent = translations[lang].title;
 }
 function switchLanguagePage(lang) {
     switch(lang) {
