@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Base64编码/解码</title>
+    <div id="language-switch">
+        <button onclick="switchLanguage('en')">English</button>
+        <button onclick="switchLanguage('zh')">中文</button>
+        <button onclick="switchLanguage('ja')">日本語</button>
+    </div>
+    <style>
+        #input, #output {
+            width: 100%;
+            height: 150px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Base64编码/解码</h1>
+    <textarea id="input" placeholder="在此输入要编码或解码的文本"></textarea>
+    <button id="encode" onclick="encode()">Encode</button>
+    <button id="decode" onclick="decode()">Decode</button>
+    <textarea id="output" placeholder="编码或解码后的结果将显示在这里"></textarea>
+    <script>
+
+// 定义 Base64 对象
+var Base64 = {
+    // 定义 Base64 字符集
+    _keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+
+    // Base64 编码函数
+    encode: function(input) {
+        var output = "";
+        var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+        var i = 0;
+        
+        // 将输入的字符串先进行 UTF-8 编码
+        input = Base64._utf8_encode(input);
+
+        while (i < input.length) {
+            chr1 = input.charCodeAt(i++);
+            chr2 = input.charCodeAt(i++);
+            chr3 = input.charCodeAt(i++);
+            
+            // 这里是将三个字节转换为四个 Base64 字符的核心算法
+            enc1 = chr1 >> 2;
+            enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+            enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+            enc4 = chr3 & 63;
+
+            // 当遇到字符串结束位置，补上等号
+            if (isNaN(chr2)) {
+                enc3 = enc4 = 64;
+            } else if (isNaN(chr3)) {
+                enc4 = 64;
+            }
+
+            // 生成 Base64 编码的字符串
+            output = output +
+                this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) +
+                this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4);
+        }
+
+        return output;
+    },
+
+    // Base64 解码函数
+    decode: function(input) {
+        var output = "";
+        var chr1, chr2, chr3;
+        var enc1, enc2, enc3, enc4;
+        var i = 0;
+
+        // 移除输入字符串中的所有非 Base64 字符
+        input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+        while (i < input.length) {
+            // 从输入字符串中获取 Base64 编码，并找到对应的字节
+            enc1 = this._keyStr.indexOf(input.charAt(i++));
+            enc2 = this._keyStr.indexOf(input.charAt(i++));
+            enc3 = this._keyStr.indexOf(input.charAt(i++));
+            enc4 = this._keyStr.indexOf(input.charAt(i++));
+
+            // 这里是将四个 Base64 字符转换为三个字节的核心算法
+            chr1 = (enc1 << 2) | (enc2 >> 4);
+            chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+            chr3 = ((enc3 & 3) << 6) | enc4;
+
+            // 生成 UTF-8 编码的字符串
+            output = output + String.fromCharCode(chr1);
+            if (enc3 != 64) {
+                output = output + String.fromCharCode(chr2);
+            }
+            if (enc4 != 64) {
+                output = output + String.fromCharCode(chr3);
+            }
+        }
+
+        // 将 UTF-8 编码的字符串转换回原始字符串
+        output = Base64._utf8_decode(output);
+
+        return output;
+    },
+
+    // UTF-8 编码函数
+    _utf8_encode: function(string) {
+        string = string.replace(/\r\n/g, "\n");
+        var utftext = "";
+
+        for (var n = 0; n < string.length; n++) {
+            var c = string.charCodeAt(n);
+            
+            // 根据 Unicode 的范围，将字符转换为相应的 UTF-8 字节
+            if (c < 128) {
+                utftext += String.fromCharCode(c);
+            } else if ((c > 127) && (c < 2048)) {
+                utftext += String.fromCharCode((c >> 6) | 192);
+                utftext += String.fromCharCode((c & 63) | 128);
+            } else {
+                utftext += String.fromCharCode((c >> 12) | 224);
+                utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                utftext += String.fromCharCode((c & 63) | 128);
+            }
+        }
+
+        return utftext;
+    },
+
+    // UTF-8 解码函数
+    _utf8_decode: function(utftext) {
+        var string = "";
+        var i = 0;
+        var c = c1 = c2 = 0;
+
+        while (i < utftext.length) {
+            c = utftext.charCodeAt(i);
+            
+            // 根据 UTF-8 字节的头部信息，将 UTF-8 字节转换为相应的字符
+            if (c < 128) {
+                string += String.fromCharCode(c);
+                i++;
+            } else if ((c > 191) && (c < 224)) {
+                c2 = utftext.charCodeAt(i + 1);
+                string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+                i += 2;
+            } else {
+                c2 = utftext.charCodeAt(i + 1);
+                c3 = utftext.charCodeAt(i + 2);
+                string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+                i += 3;
+            }
+        }
+
+        return string;
+    }
+};
+function encode() {
+    var inputText = document.getElementById('input').value;
+    var outputText = Base64.encode(inputText);
+    document.getElementById('output').value = outputText;
+}
+
+function decode() {
+    var inputText = document.getElementById('input').value;
+    var outputText = Base64.decode(inputText);
+    document.getElementById('output').value = outputText;
+}
+var translations = {
+    en: {
+        title: 'Base64 Encode/Decode',
+        inputPlaceholder: 'Enter text to encode or decode here',
+        encode: 'Encode',
+        decode: 'Decode',
+        outputPlaceholder: 'Encoded or decoded result will be displayed here',
+    },
+    zh: {
+        title: 'Base64编码/解码',
+        inputPlaceholder: '在此输入要编码或解码的文本',
+        encode: '编码',
+        decode: '解码',
+        outputPlaceholder: '编码或解码后的结果将显示在这里',
+    },
+    ja: {
+        title: 'Base64エンコード/デコード',
+        inputPlaceholder: 'ここにエンコードまたはデコードするテキストを入力してください',
+        encode: 'エンコード',
+        decode: 'デコード',
+        outputPlaceholder: 'エンコードまたはデコードされた結果がここに表示されます',
+    }
+};
+function switchLanguage(lang) {
+    document.title = translations[lang].title;
+    document.getElementById('input').placeholder = translations[lang].inputPlaceholder;
+    document.getElementById('encode').innerText = translations[lang].encode;
+    document.getElementById('decode').innerText = translations[lang].decode;
+    document.getElementById('output').placeholder = translations[lang].outputPlaceholder;
+}
+function switchLanguagePage(lang) {
+    switch(lang) {
+        case 'en':
+            window.location.href = 'index_en.html';
+            break;
+        case 'zh':
+            window.location.href = 'index_zh.html';
+            break;
+        case 'jp':
+            window.location.href = 'index_jp.html';
+            break;
+        default:
+            console.error('Unknown language: ' + lang);
+    }
+}
+
+    </script>
+</body>
+</html>
